@@ -20,7 +20,6 @@ void append_to_log_file(const char* message) {
 }
 
 b8 LS_initialize(u64* memory_requirement, void* state) {
-  // Create a log file
     *memory_requirement = sizeof(logger_system_state);
     if (state == 0) {
         return true;
@@ -28,53 +27,38 @@ b8 LS_initialize(u64* memory_requirement, void* state) {
 
     state_ptr = state;
 
-    // Create new/wipe existing log file, then open it.
     if (!filesystem_open("console.log", FILE_MODE_WRITE, false, &state_ptr->log_file_handle)) {
         platform_console_write_error("ERROR: Unable to open console.log for writing.", LOG_LEVEL_ERROR);
         return false;
     }
 
-    // TODO: create log file.
     return true;
 }
 
 void LS_shutdown(void* state) {
-    // TODO: cleanup logging/write queued entries.
     state_ptr = 0;
 }
 
 EXP void LS_output(log_level level, const char* message, ...) {
-    // TODO: These string operations are all pretty slow. This needs to be
-    // moved to another thread eventually, along with the file writes, to
-    // avoid slowing things down while the engine is trying to run.
     const char* level_strings[6] = {"[FATAL]: ", "[ERROR]: ", "[WARN]:  ", "[INFO]:  ", "[DEBUG]: ", "[TRACE]: "};
     b8 is_error = level < LOG_LEVEL_WARN;
 
-    // Technically imposes a 32k character limit on a single log entry, but...
-    // DON'T DO THAT!
     char out_message[32000];
     kzero_memory(out_message, sizeof(out_message));
 
-    // Format original message.
-    // NOTE: Oddly enough, MS's headers override the GCC/Clang va_list type with a "typedef char* va_list" in some
-    // cases, and as a result throws a strange error here. The workaround for now is to just use __builtin_va_list,
-    // which is the type GCC/Clang's va_start expects.
     __builtin_va_list arg_ptr;
     va_start(arg_ptr, message);
     string_format_v(out_message, message, arg_ptr);
     va_end(arg_ptr);
 
-    // Prepend log level to message.
     string_format(out_message, "%s%s\n", level_strings[level], out_message);
 
-    // Print accordingly
     if (is_error) {
         platform_console_write_error(out_message, level);
     } else {
         platform_console_write(out_message, level);
     }
 
-    // Queue a copy to be written to the log file.
     append_to_log_file(out_message);
 }
 
