@@ -13,7 +13,7 @@
 #endif
 
 typedef enum LS_LVL {
-  LS_LVL_FATALL = 2
+  LS_LVL_FATALL = 0
   LS_LVL_ERRORR = 1
   LS_LVL_WARNIN = 2
   LS_LVL_INFORM = 3
